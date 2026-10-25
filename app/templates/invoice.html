@@ -1,0 +1,524 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.invoice-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    color: #102b53;
+}
+
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.invoice-header h1 {
+    font-size: 30px;
+    font-weight: 800;
+    margin: 0;
+    color: #102b53;
+}
+
+.invoice-subtitle {
+    color: #7b8da9;
+    margin-top: 8px;
+}
+
+.invoice-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 22px;
+    box-shadow: 0 5px 24px rgba(16, 43, 83, 0.06);
+}
+
+.invoice-section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.invoice-info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.info-label {
+    color: #8190a8;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.info-value {
+    font-size: 17px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.invoice-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.invoice-table th {
+    background: #f0f5ff;
+    color: #183b70;
+    padding: 16px;
+    text-align: left;
+}
+
+.invoice-table td {
+    padding: 17px 16px;
+    border-bottom: 1px solid #e8eef7;
+}
+
+.invoice-table th:last-child,
+.invoice-table td:last-child {
+    text-align: right;
+}
+
+.invoice-summary {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.summary-box {
+    width: 100%;
+    max-width: 420px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #edf1f7;
+}
+
+.summary-total {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0864ed;
+}
+
+.summary-due {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+.invoice-status {
+    display: inline-block;
+    padding: 9px 15px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.status-paid {
+    color: #087f57;
+    background: #dff8ec;
+}
+
+.status-unpaid {
+    color: #ae6500;
+    background: #fff1d8;
+}
+
+.status-cancelled {
+    color: #dc2626;
+    background: #fee2e2;
+}
+
+.invoice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.invoice-page .invoice-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+}
+
+.invoice-page .btn-primary {
+    background: #0864ed;
+    color: white;
+}
+
+.invoice-page .btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.invoice-page .btn-outline {
+    background: white;
+    color: #0864ed;
+    border-color: #cbdcf8;
+}
+
+.invoice-page .invoice-btn:hover {
+    filter: brightness(0.95);
+}
+
+.payment-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.payment-field label {
+    display: block;
+    margin-bottom: 9px;
+    font-weight: 600;
+}
+
+.invoice-page .payment-field input,
+.invoice-page .payment-field select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 13px;
+    border: 1px solid #d7e2f2;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.payment-history {
+    margin-top: 20px;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 0;
+    border-bottom: 1px solid #edf1f7;
+}
+
+.empty-history {
+    color: #8795ac;
+    padding: 20px 0;
+}
+
+@media (max-width: 768px) {
+    .invoice-card {
+        padding: 18px;
+    }
+
+    .invoice-info,
+    .payment-form {
+        grid-template-columns: 1fr;
+    }
+
+    .invoice-header h1 {
+        font-size: 24px;
+    }
+}
+
+@media print {
+    .sidebar,
+    .topbar,
+    .no-print,
+    .payment-card {
+        display: none !important;
+    }
+
+    .invoice-page {
+        max-width: 100%;
+    }
+
+    .invoice-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
+</style>
+
+<div class="invoice-page">
+
+    <div class="invoice-header">
+        <div>
+            <h1>Chi tiết hóa đơn</h1>
+            <p class="invoice-subtitle">
+                Quản lý và theo dõi thông tin thanh toán
+            </p>
+        </div>
+
+        <div class="invoice-actions no-print">
+            <a href="{{ url_for('index') }}"
+               class="invoice-btn btn-outline">
+                ← Tổng quan
+            </a>
+
+            <button type="button"
+                    class="invoice-btn btn-primary"
+                    onclick="window.print()">
+                In / Lưu PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="invoice-card">
+
+        <div class="invoice-header">
+            <div>
+                <h2>
+                    HÓA ĐƠN HD-{{ '%05d'|format(invoice.id) }}
+                </h2>
+
+                <p class="invoice-subtitle">
+                    Billing System
+                </p>
+            </div>
+
+            {% if invoice.is_cancelled %}
+                <span class="invoice-status status-cancelled">
+                    Đã hủy
+                </span>
+            {% elif invoice.due <= 0 %}
+                <span class="invoice-status status-paid">
+                    Đã thanh toán
+                </span>
+            {% else %}
+                <span class="invoice-status status-unpaid">
+                    {{ invoice.status }}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="invoice-info">
+            <div>
+                <p class="info-label">Khách hàng</p>
+                <p class="info-value">
+                    {{ invoice.customer.name }}
+                </p>
+            </div>
+
+            <div>
+                <p class="info-label">Ngày tạo hóa đơn</p>
+                <p class="info-value">
+                    {{ invoice.created_at.strftime('%d/%m/%Y') }}
+                </p>
+            </div>
+
+            <div>
+                <p class="info-label">Mã hóa đơn</p>
+                <p class="info-value">
+                    HD-{{ '%05d'|format(invoice.id) }}
+                </p>
+            </div>
+
+            <div>
+                <p class="info-label">Trạng thái</p>
+                <p class="info-value">
+                    {% if invoice.is_cancelled %}
+                        Đã hủy
+                    {% else %}
+                        {{ invoice.status }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="invoice-card">
+        <h3 class="invoice-section-title">
+            Danh sách sản phẩm
+        </h3>
+
+        <div class="invoice-table-wrap">
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Số lượng</th>
+                        <th>Đơn giá</th>
+                        <th>Thành tiền</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for i in invoice.items %}
+                    <tr>
+                        <td>{{ i.product_name }}</td>
+                        <td>{{ i.quantity }}</td>
+                        <td>
+                            {{ '{:,.0f}'.format(i.unit_price) }} đ
+                        </td>
+                        <td>
+                            {{ '{:,.0f}'.format(i.quantity * i.unit_price) }} đ
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="invoice-summary">
+            <div class="summary-box">
+
+                <div class="summary-row">
+                    <span>Tổng tiền</span>
+                    <strong>
+                        {{ '{:,.0f}'.format(invoice.total) }} đ
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Đã thanh toán</span>
+                    <strong>
+                        {{ '{:,.0f}'.format(invoice.paid) }} đ
+                    </strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Còn nợ</span>
+                    <strong class="summary-due">
+                        {{ '{:,.0f}'.format(invoice.due) }} đ
+                    </strong>
+                </div>
+
+                <div class="summary-row summary-total">
+                    <span>Tổng hóa đơn</span>
+                    <span>
+                        {{ '{:,.0f}'.format(invoice.total) }} đ
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="invoice-card payment-card">
+
+        <h3 class="invoice-section-title">
+            Ghi nhận thanh toán
+        </h3>
+
+        {% if invoice.is_cancelled %}
+            <p class="summary-due">
+                Hóa đơn đã hủy, không thể thanh toán.
+            </p>
+
+        {% elif invoice.due > 0 %}
+
+            <form action="{{ url_for('pay', id=invoice.id) }}"
+                  method="post"
+                  class="payment-form">
+
+                <input type="hidden"
+                       name="csrf_token"
+                       value="{{ csrf_token }}">
+
+                <div class="payment-field">
+                    <label>Số tiền thanh toán</label>
+                    <input type="number"
+                           name="amount"
+                           step="0.01"
+                           min="0.01"
+                           max="{{ invoice.due }}"
+                           placeholder="Nhập số tiền"
+                           required>
+                </div>
+
+                <div class="payment-field">
+                    <label>Phương thức</label>
+                    <select name="method">
+                        <option value="Tiền mặt">Tiền mặt</option>
+                        <option value="Chuyển khoản">
+                            Chuyển khoản
+                        </option>
+                    </select>
+                </div>
+
+                <button type="submit"
+                        class="invoice-btn btn-primary">
+                    Xác nhận thanh toán
+                </button>
+            </form>
+
+        {% else %}
+            <span class="invoice-status status-paid">
+                Hóa đơn đã thanh toán đầy đủ
+            </span>
+        {% endif %}
+
+        <div class="payment-history">
+            <h3 class="invoice-section-title">
+                Lịch sử thanh toán
+            </h3>
+
+            {% for p in invoice.payments %}
+                <div class="history-item">
+                    <div>
+                        <strong>{{ p.method }}</strong>
+                        <p class="invoice-subtitle">
+                            {{ p.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </p>
+                    </div>
+
+                    <strong>
+                        {{ '{:,.0f}'.format(p.amount) }} đ
+                    </strong>
+                </div>
+            {% else %}
+                <p class="empty-history">
+                    Chưa có giao dịch thanh toán nào.
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if not invoice.is_cancelled and invoice.paid == 0 %}
+    <div class="invoice-card no-print">
+        <h3 class="invoice-section-title">
+            Quản lý hóa đơn
+        </h3>
+
+        <p class="invoice-subtitle">
+            Bạn có thể hủy hóa đơn chưa có giao dịch thanh toán.
+        </p>
+
+        <form action="{{ url_for('cancel_invoice', id=invoice.id) }}"
+              method="post"
+              onsubmit="return confirm('Bạn có chắc chắn muốn hủy hóa đơn này?');">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token }}">
+
+            <button type="submit"
+                    class="invoice-btn btn-danger">
+                Hủy hóa đơn
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

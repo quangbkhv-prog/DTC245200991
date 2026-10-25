@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing System - Đề 18</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    {% if session.get('user_id') %}
+
+    <!-- MENU BÊN TRÁI -->
+    <aside class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">▣</span>
+            <div>
+                <strong>Billing System</strong>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('index') }}"
+               class="menu-item">
+                <span>⌂</span> Tổng quan
+            </a>
+
+            <a href="{{ url_for('customers') }}"
+               class="menu-item">
+                <span>♙</span> Khách hàng
+            </a>
+
+            <a href="{{ url_for('products') }}"
+               class="menu-item">
+                <span>◇</span> Sản phẩm
+            </a>
+
+            <a href="{{ url_for('new_invoice') }}"
+               class="menu-item">
+                <span>▤</span> Tạo hóa đơn
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            HỆ THỐNG QUẢN LÝ HÓA ĐƠN
+        </div>
+    </aside>
+
+    {% endif %}
+
+    <!-- NỘI DUNG CHÍNH -->
+    <div class="{% if session.get('user_id') %}app-layout{% endif %}">
+
+        {% if session.get('user_id') %}
+        <header class="topbar">
+            <div class="search-box">
+                <span>⌕</span>
+                <input type="text"
+                       placeholder="Tìm kiếm khách hàng, sản phẩm, hóa đơn..."
+                       aria-label="Tìm kiếm">
+            </div>
+
+            <div class="topbar-right">
+                <div class="admin-avatar">A</div>
+                <div class="admin-info">
+                    <strong>Admin</strong>
+                    <small>Quản trị viên</small>
+                </div>
+
+                <form action="{{ url_for('logout') }}"
+                      method="post">
+                    <input type="hidden"
+                           name="csrf_token"
+                           value="{{ csrf_token }}">
+                    <button type="submit" class="logout-btn">
+                        Đăng xuất
+                    </button>
+                </form>
+            </div>
+        </header>
+        {% endif %}
+
+        <main class="main-content">
+            {% for msg in get_flashed_messages() %}
+                <div class="flash">{{ msg }}</div>
+            {% endfor %}
+
+            {% block content %}
+            {% endblock %}
+        </main>
+
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+</body>
+</html>

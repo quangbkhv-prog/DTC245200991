@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="product-page">
+
+    <!-- Tiêu đề -->
+    <div class="product-page-header">
+        <div>
+            <h1>Sản phẩm / Dịch vụ</h1>
+            <p>Quản lý danh sách sản phẩm và dịch vụ của bạn.</p>
+        </div>
+
+        <button type="button" class="product-add-btn"
+            onclick="document.getElementById('addProductForm').hidden = false">
+            + Thêm sản phẩm
+        </button>
+    </div>
+
+    <!-- Form thêm sản phẩm -->
+    <div class="product-form-card" id="addProductForm" hidden>
+        <h3>Thêm sản phẩm mới</h3>
+
+        <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+
+            <div class="product-form-grid">
+                <input name="name" placeholder="Tên sản phẩm" required>
+
+                <input name="price" type="number" min="0" step="0.01" placeholder="Đơn giá (VNĐ)" required>
+                <div class="form-group">
+                    <label for="product-image">Ảnh sản phẩm</label>
+                    <input type="file" id="product-image" name="image" accept="image/png,image/jpeg,image/webp">
+                </div>
+            </div>
+
+            <div class="product-form-actions">
+                <button type="submit" class="product-save-btn">
+                    Lưu sản phẩm
+                </button>
+
+                <button type="button" class="product-cancel-btn"
+                    onclick="document.getElementById('addProductForm').hidden = true">
+                    Hủy
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tìm kiếm -->
+    <div class="product-toolbar">
+        <input type="search" id="productSearch" placeholder="Tìm kiếm sản phẩm..." oninput="filterProducts()">
+
+        <span>{{ products|length }} sản phẩm</span>
+    </div>
+
+    <!-- Danh sách sản phẩm -->
+    <div class="product-grid">
+
+        {% for x in products %}
+        <div class="product-item" data-name="{{ x.name|lower }}">
+
+            <div class="product-image">
+                {% if x.image_filename %}
+                <img src="{{ url_for('static', filename='uploads/products/' ~ x.image_filename) }}" alt="{{ x.name }}"
+                    class="product-image">
+                {% else %}
+                <span>📦</span>
+                {% endif %}
+            </div>
+
+            <div class="product-info">
+                <h3>{{ x.name }}</h3>
+                <p class="product-price">
+                    {{ "{:,.0f}".format(x.price) }} đ
+                </p>
+            </div>
+
+            <!-- Sửa sản phẩm -->
+            <button type="button" class="product-edit-btn" onclick="toggleProductEdit(this)">
+                ✏️ Sửa sản phẩm
+            </button>
+
+            <form action="{{url_for('edit_product',id=x.id)}}" method="post" enctype="multipart/form-data"
+                class="product-edit-form" hidden>
+
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+
+                <input name="name" value="{{x.name}}" required>
+
+                <input name="price" type="number" min="0" step="0.01" value="{{x.price}}" required>
+
+                <div class="form-group">
+                    <label>Thay đổi ảnh sản phẩm</label>
+                    <input type="file" name="image" accept="image/png,image/jpeg,image/webp">
+                </div>
+
+                <button type="submit" class="product-save-btn">
+                    Lưu sửa
+                </button>
+            </form>
+
+            <!-- Xóa sản phẩm -->
+            <form action="{{url_for('delete_product',id=x.id)}}" method="post"
+                onsubmit="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">
+
+                <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+
+                <button type="submit" class="product-delete-btn">
+                    Xóa sản phẩm
+                </button>
+            </form>
+
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+
+<script>
+    function filterProducts() {
+        const keyword = document.getElementById('productSearch')
+            .value.toLowerCase().trim();
+
+        document.querySelectorAll('.product-item').forEach(item => {
+            const name = item.dataset.name;
+            item.style.display = name.includes(keyword) ? '' : 'none';
+        });
+    }
+    function toggleProductEdit(button) {
+        const form = button.nextElementSibling;
+
+        form.hidden = !form.hidden;
+
+        button.textContent = form.hidden
+            ? "✏️ Sửa sản phẩm"
+            : "Đóng chỉnh sửa";
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,135 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="invoice-create-page">
+
+    <div class="invoice-create-header">
+        <div>
+            <h1>Tạo hóa đơn mới</h1>
+            <p>Chọn khách hàng và sản phẩm để lập hóa đơn.</p>
+        </div>
+        <span class="invoice-header-icon">▤</span>
+    </div>
+
+    <form method="post" id="invoice-form">
+        <input type="hidden" name="csrf_token"
+               value="{{ csrf_token }}">
+
+        <div class="invoice-create-card">
+            <h2>1. Thông tin khách hàng</h2>
+            <label for="customer_id">Khách hàng</label>
+
+            <select id="customer_id" name="customer_id" required>
+                <option value="">-- Chọn khách hàng --</option>
+                {% for c in customers %}
+                <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+            </select>
+
+            <p class="invoice-help">
+                Chưa có khách hàng?
+                <a href="{{ url_for('customers') }}">
+                    Quản lý khách hàng
+                </a>
+            </p>
+        </div>
+
+        <div class="invoice-create-card">
+            <div class="invoice-create-card-heading">
+                <h2>2. Danh sách sản phẩm</h2>
+                <button type="button"
+                        id="add-product-btn"
+                        class="invoice-add-btn">
+                    + Thêm sản phẩm
+                </button>
+            </div>
+
+            <div class="invoice-table-wrap">
+                <table class="invoice-product-table">
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>Số lượng</th>
+                            <th>Đơn giá</th>
+                            <th>Thành tiền</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="invoice-lines">
+                        <tr class="invoice-line">
+                            <td>
+                                <select name="product_id"
+                                        class="invoice-product-select"
+                                        required>
+                                    {% for p in products %}
+                                    <option value="{{ p.id }}"
+                                            data-price="{{ p.price }}">
+                                        {{ p.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+
+                            <td>
+                                <input type="number"
+                                       name="quantity"
+                                       class="invoice-quantity"
+                                       min="1"
+                                       max="100000"
+                                       value="1"
+                                       required>
+                            </td>
+
+                            <td class="invoice-unit-price">0 đ</td>
+                            <td class="invoice-line-total">0 đ</td>
+
+                            <td>
+                                <button type="button"
+                                        class="invoice-remove-btn">
+                                    Xóa
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="invoice-create-card">
+            <h2>3. Tổng kết hóa đơn</h2>
+
+            <div class="invoice-summary-row">
+                <span>Số loại sản phẩm</span>
+                <strong id="invoice-item-count">0</strong>
+            </div>
+
+            <div class="invoice-summary-row">
+                <span>Tổng số lượng</span>
+                <strong id="invoice-quantity-count">0</strong>
+            </div>
+
+            <div class="invoice-summary-total">
+                <span>Tổng thanh toán</span>
+                <strong id="invoice-grand-total">0 đ</strong>
+            </div>
+        </div>
+
+        <div class="invoice-create-actions">
+            <a href="{{ url_for('index') }}"
+               class="invoice-cancel-btn">
+                Hủy
+            </a>
+
+            <button type="submit"
+                    class="invoice-submit-btn">
+                Lưu hóa đơn
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/new_invoice.js') }}"
+        defer></script>
+{% endblock %}
