@@ -1,0 +1,135 @@
+
+# HỆ THỐNG QUẢN LÝ HÓA ĐƠN BILLING18 - DOCKER COMPOSE
+# Môn: Triển khai và Quản trị Hệ thống Phần mềm (Đề 18)
+
+name: billing18
+
+services:
+
+  # 1. PostgreSQL Database - Lưu trữ dữ liệu hóa đơn, cô lập trong backend
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [db_data:/var/lib/postgresql/data]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      retries: 10
+    security_opt: [no-new-privileges:true]
+
+  # 2. Flask Web Application - Non-root, bảo mật và kết nối Database
+  web:
+    build: ./app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${APP_DB_USER}:${APP_DB_PASSWORD}@db:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      REGISTRATION_INVITE_CODE: ${REGISTRATION_INVITE_CODE}
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [backend,frontend]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    volumes:
+      - product_images:/app/static/uploads/products
+
+  # 3. Nginx Reverse Proxy - Điều hướng truy cập và bảo vệ Website
+  nginx:
+    build: ./nginx
+    restart: unless-stopped
+    volumes:
+        - product_images:/app/static/uploads/products:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on: [web]
+    networks: [frontend]
+    security_opt: [no-new-privileges:true]
+
+  # 4. pgAdmin - Quản trị cơ sở dữ liệu PostgreSQL
+  pgadmin:
+    image: dpage/pgadmin4:8
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "127.0.0.1:5050:80"
+    networks: [backend, frontend]
+    volumes: [pgadmin_data:/var/lib/pgadmin]
+
+  # 5. Prometheus - Thu thập và lưu trữ Metrics hệ thống
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes: ['./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro',prometheus_data:/prometheus]
+    ports: ['127.0.0.1:9090:9090']
+    networks: [monitoring,frontend]
+
+  # 6. cAdvisor - Giám sát CPU, RAM và Docker Container
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    privileged: true
+    volumes: ['/:/rootfs:ro','/var/run:/var/run:ro','/sys:/sys:ro','/var/lib/docker:/var/lib/docker:ro']
+    networks: [monitoring]
+
+  # 7. PostgreSQL Exporter - Thu thập Metrics từ Database
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
+    networks: [backend,monitoring]
+
+  # 8. Blackbox Exporter - Giám sát HTTP và trạng thái Website
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    volumes: ['./prometheus/blackbox.yml:/etc/blackbox_exporter/config.yml:ro']
+    networks: [monitoring,frontend]
+
+  # 9. Grafana - Dashboard giám sát CPU, RAM, Web và Database
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+    volumes: [grafana_data:/var/lib/grafana,'./grafana/provisioning:/etc/grafana/provisioning:ro']
+    ports: ['127.0.0.1:3001:3000']
+    networks: [monitoring]
+
+  # 10. Loki - Lưu trữ và truy vấn Log tập trung
+  loki:
+    image: grafana/loki:3.2.1
+    command: -config.file=/etc/loki/config.yml
+    volumes: ['./loki/config.yml:/etc/loki/config.yml:ro',loki_data:/loki]
+    networks: [monitoring]
+
+  # 11. Promtail - Thu thập và chuyển tiếp Log đến Loki
+  promtail:
+    image: grafana/promtail:3.2.1
+    command: -config.file=/etc/promtail/config.yml
+    volumes: ['./promtail/config.yml:/etc/promtail/config.yml:ro','/var/run/docker.sock:/var/run/docker.sock:ro']
+    networks: [monitoring]
+    depends_on: [loki]
+
+
+# Cấu hình Docker Networks - Frontend, Backend và Monitoring
+networks:
+  frontend: {}
+  backend:
+    internal: true
+  monitoring: {}
+
+
+# Cấu hình Docker Volumes - Lưu trữ dữ liệu lâu dài
+volumes:
+  db_data: {}
+  pgadmin_data: {}
+  prometheus_data: {}
+  grafana_data: {}
+  loki_data: {}
+  product_images: {}
